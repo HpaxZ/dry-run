@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="java.js" defer></script>
+<title>Dry-Run – Flood-aware barangay routes</title>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eaf1f2;--panel:#ffffff;--text:#10252c;--muted:#52666d;--line:#cbd9dc;--road:#9fb1b6;--casing:#f7fafa;--accent:#0a7c6e;--ghost:#7b8c92;
+--d1:#d9a400;--d2:#ee7d00;--d3:#d83a3a;--d4:#7a2bb0;--chip:#dfeaec;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1a1f;--panel:#13262d;--text:#e4eff1;--muted:#93aab0;--line:#264048;--road:#46616a;--casing:#0c1a1f;--accent:#38d1b8;--ghost:#7c969d;--d1:#f2c230;--d2:#ff9a2e;--d3:#ff6363;--d4:#c78cff;--chip:#1b333b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c1a1f;--panel:#13262d;--text:#e4eff1;--muted:#93aab0;--line:#264048;--road:#46616a;--casing:#0c1a1f;--accent:#38d1b8;--ghost:#7c969d;--d1:#f2c230;--d2:#ff9a2e;--d3:#ff6363;--d4:#c78cff;--chip:#1b333b;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:18px 20px 6px;max-width:1180px;margin:auto}
+h1{font-size:1.6rem;margin:0;letter-spacing:-.01em}
+header p{margin:4px 0 0;color:var(--muted);max-width:62ch}
+main{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:16px;padding:12px 20px 28px;max-width:1180px;margin:auto}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.map{padding:6px}
+svg{width:100%;height:auto;display:block;touch-action:manipulation}
+h2{font-size:1rem;margin:0 0 8px}
+.side{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+button,select{font:inherit;color:var(--text)}
+button{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer;min-height:38px}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] button[aria-pressed="true"]{color:#06201b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button[aria-pressed="true"]{color:#06201b}}
+button:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button.dz{border-radius:10px}
+select{width:100%;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+label{display:block;font-size:.85rem;color:var(--muted);margin:8px 0 3px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.big{font-size:1.9rem;font-weight:700;line-height:1}
+.muted{color:var(--muted);font-size:.9rem}
+.warn{background:color-mix(in srgb,var(--d2) 16%,transparent);border-left:4px solid var(--d2);padding:6px 10px;border-radius:6px;margin-top:8px;font-size:.9rem}
+.bad{border-left-color:var(--d3);background:color-mix(in srgb,var(--d3) 15%,transparent)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;padding:6px 10px 4px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:18px;height:6px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.steps{margin:8px 0 0;padding-left:18px}
+.seg:focus{outline:none}
+@keyframes dash{to{stroke-dashoffset:-24}}
+.flow{animation:dash 1.2s linear infinite}
+@media(prefers-reduced-motion:reduce){.flow{animation:none}}
+input,textarea{width:100%;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px}textarea{min-height:70px;resize:vertical}input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{display:inline-block;background:var(--text);color:var(--bg);border-radius:999px;padding:9px 15px;text-decoration:none;font-weight:700}
+.msgs{max-height:240px;overflow:auto;display:flex;flex-direction:column;gap:6px;margin:8px 0}.m{background:var(--bg);border-radius:10px;padding:6px 10px;font-size:.92rem}.m.sys{border-left:4px solid var(--accent)}
+.tag{font-size:.72rem;background:var(--accent);color:var(--bg);border-radius:6px;padding:0 5px}summary{cursor:pointer;margin-top:10px}.tk{border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:8px;font-size:.9rem}.hl{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--line);font-size:.92rem}.hl a{color:var(--text);font-weight:700}
+footer{max-width:1180px;margin:auto;padding:0 20px 24px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+<h1>Dry-Run</h1>
+<p>Prototype of a community flood-routing tool. Tap a road on the map to report flood depth, then watch the route change for your vehicle.</p>
+</header>
+<main>
+<section class="card map" aria-label="Barangay map">
+<svg id="map" viewBox="0 0 720 470" role="img" aria-label="Schematic barangay road map"></svg>
+<div class="legend">
+<span><i style="background:var(--road)"></i>Clear</span><span><i style="background:var(--d1)"></i>Ankle</span><span><i style="background:var(--d2)"></i>Knee</span><span><i style="background:var(--d3)"></i>Waist</span><span><i style="background:var(--d4)"></i>Impassable</span><span><i style="background:repeating-linear-gradient(90deg,var(--muted) 0 4px,transparent 4px 7px)"></i>Unconfirmed</span>
+</div>
+</section>
+<aside class="side">
+<div class="card" id="trip"></div>
+<div class="card" id="seg"></div>
+<div class="card">
+<h2>Who is reporting?</h2>
+<div class="row" id="modes"></div>
+<p class="muted" style="margin:8px 0">Barangay officials are trusted: their reports count right away. Resident reports need 2 confirmations.</p>
+<div class="row"><button class="dz" onclick="scenario()">Load typhoon scenario</button><button class="dz" onclick="resetAll()">Clear all reports</button></div>
+</div>
+<div class="card"><h2>Messages</h2><div class="row" id="tabs"></div><div id="msgs" class="msgs" aria-live="polite"></div><div class="row" id="cin" style="flex-wrap:nowrap"><input id="mi" placeholder="Message your barangay" aria-label="Message" onkeydown="if(event.key==='Enter')send()"><button onclick="send()">Send</button></div></div>
+<div class="card"><h2>Report to Batangas City CDRRMO</h2><p class="muted" style="margin:0 0 8px">Someone in danger? Call 911 or the CDRRMO now. Don’t wait for a text report.</p><a class="btn" href="tel:+63437023902">Call CDRRMO (043) 702-3902</a>
+<label for="rt">What happened</label><select id="rt"><option>Flooded road</option><option>People stranded</option><option>Medical emergency</option><option>Fallen tree / landslide</option><option>Request for evacuation</option><option>Other</option></select>
+<label for="rl">Where</label><input id="rl" placeholder="Street, purok or landmark"><div class="row" style="margin-top:6px"><button class="dz" onclick="fillLoc()">Use selected road</button></div>
+<div class="grid2"><div><label for="rn">People affected</label><input id="rn" type="number" min="0" placeholder="0"></div><div><label for="rm">Your name</label><input id="rm" autocomplete="name"></div></div>
+<label for="rp">Contact number</label><input id="rp" type="tel" autocomplete="tel" placeholder="09xx xxx xxxx">
+<label for="rd">Details</label><textarea id="rd" placeholder="Water level, number of children or elderly, what help is needed"></textarea>
+<div class="row" style="margin-top:8px"><button class="dz" onclick="submitRep()">Log report</button><button class="dz" onclick="copyRep()">Copy report text</button></div><div id="tickets"></div>
+<details><summary>Batangas City hotlines</summary><div class="hl"><span>CDRRMO</span><a href="tel:+63437023902">043 702-3902</a></div><div class="hl"><span>Bureau of Fire Protection</span><a href="tel:+63434257163">043 425-7163</a></div><div class="hl"><span>PNP Batangas City</span><a href="tel:+63437232030">043 723-2030</a></div><div class="hl"><span>Philippine Red Cross</span><a href="tel:+63437233027">043 723-3027</a></div><div class="hl"><span>City Health Office</span><a href="tel:+63437238890">043 723-8890</a></div><div class="hl"><span>24/7 health emergency</span><a href="tel:+639992226626">0999 222 6626</a></div><p class="muted" style="margin:6px 0 0">Listed on the Batangas City government website. Numbers can change, so confirm with your barangay hall.</p></details></div>
+</aside>
+</main>
+<footer>Schematic demo data, not a real map. Conditions change quickly: always use your own judgment and follow BDRRMC advisories.</footer>
+<script>
+
+</script>
+</body>
+</html>
